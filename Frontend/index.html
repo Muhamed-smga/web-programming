@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Discover Sarajevo's best cafés, sweet shops, bars, clubs and events with Sarajevo2B." />
+    <meta name="theme-color" content="#211d19" />
+    <title>Sarajevo2B | Discover Sarajevo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-dark sticky-top site-nav" aria-label="Main navigation">
+      <div class="container">
+        <a class="navbar-brand brand" href="#home" aria-label="Sarajevo2B home">
+          Sarajevo<span>2B</span><small>YOUR CITY, YOUR STORY</small>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavigation" aria-controls="mainNavigation" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="mainNavigation">
+          <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-1">
+            <li class="nav-item"><a class="nav-link" href="#home" data-route="home">Home</a></li>
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#places" role="button" data-bs-toggle="dropdown" aria-expanded="false">Categories</a>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="#category/coffee-bars">Coffee Bars</a></li>
+                <li><a class="dropdown-item" href="#category/sweet-shops">Sweet Shops</a></li>
+                <li><a class="dropdown-item" href="#category/clubs">Clubs</a></li>
+                <li><a class="dropdown-item" href="#category/bars">Bars</a></li>
+                <li><a class="dropdown-item" href="#events">Events</a></li>
+              </ul>
+            </li>
+            <li class="nav-item"><a class="nav-link" href="#reviews" data-route="reviews">Reviews</a></li>
+            <li class="nav-item"><a class="nav-link" href="#events" data-route="events">Events</a></li>
+            <li class="nav-item"><a class="nav-link" href="#places" data-route="places">Places</a></li>
+            <li class="nav-item"><a class="nav-link" href="#favorites" data-route="favorites">Favorites <span id="favoriteCount" class="favorite-count">0</span></a></li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <div id="appNotice" class="alert app-notice" role="status" hidden></div>
+    <main id="app" tabindex="-1" aria-live="polite">
+      <div class="container py-5 text-center" role="status">Loading Sarajevo2B…</div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container py-5">
+        <div class="row g-4">
+          <div class="col-lg-5">
+            <a class="brand footer-brand" href="#home">Sarajevo<span>2B</span></a>
+            <p class="footer-copy mt-3 mb-0">Find your corner of Sarajevo. From the first morning coffee to the last song of the night.</p>
+            <p class="footer-disclaimer mt-2 mb-0">Demo listings and illustrative photos; not connected to live venue data. Hero photo: <a href="https://commons.wikimedia.org/wiki/File:Sebilj_(by_day).jpg" target="_blank" rel="noopener noreferrer">Jaimrsilva / Wikimedia Commons</a>, licensed <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>.</p>
+          </div>
+          <div class="col-6 col-lg-3">
+            <h2 class="footer-heading">Explore</h2>
+            <a href="#places">Places</a><a href="#events">Events</a><a href="#reviews">Reviews</a>
+          </div>
+          <div class="col-6 col-lg-4">
+            <h2 class="footer-heading">Discover more</h2>
+            <a href="#category/coffee-bars">Coffee Bars</a><a href="#category/sweet-shops">Sweet Shops</a><a href="#favorites">Your Favorites</a>
+          </div>
+        </div>
+        <div class="footer-bottom mt-4 pt-3">© <span id="currentYear"></span> Sarajevo2B. Made for curious people.</div>
+      </div>
+    </footer>
+
+    <div class="modal fade" id="detailsModal" tabindex="-1" aria-labelledby="detailsModalTitle" aria-hidden="true">
+      <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content detail-modal">
+          <div class="modal-header border-0">
+            <h2 class="modal-title fs-4" id="detailsModalTitle">Place details</h2>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body pt-0" id="detailsModalBody"></div>
+        </div>
+      </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
