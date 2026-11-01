@@ -1,0 +1,22 @@
+{
+  "name": "sarajevo2b/backend",
+  "description": "Sarajevo2B REST API",
+  "license": "MIT",
+  "type": "project",
+  "require": {
+    "firebase/php-jwt": "^7.2",
+    "flightphp/core": "^3.15"
+  },
+  "autoload": {
+    "psr-4": {
+      "Sarajevo2B\\Backend\\Config\\": "./config/",
+      "Sarajevo2B\\Backend\\DAO\\": "./dao/",
+      "Sarajevo2B\\Backend\\Middleware\\": "./middleware/",
+      "Sarajevo2B\\Backend\\Services\\": "./services/"
+    }
+  },
+  "config": {
+    "optimize-autoloader": true,
+    "sort-packages": true
+  }
+}
