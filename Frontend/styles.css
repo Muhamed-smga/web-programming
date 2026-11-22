@@ -248,6 +248,88 @@ a {
   color: var(--ink-soft);
 }
 
+.weather-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 1.25rem 1.5rem;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  background: #fff;
+  box-shadow: 0 8px 28px rgba(53, 43, 31, 0.045);
+}
+
+.weather-card-heading h2 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 1.45rem;
+  font-weight: 700;
+}
+
+.weather-card-heading .eyebrow {
+  margin-bottom: 0.35rem;
+}
+
+.weather-location,
+.weather-status {
+  margin: 0.3rem 0 0;
+  color: var(--ink-soft);
+  font-size: 0.88rem;
+}
+
+.weather-card-content {
+  min-width: 0;
+}
+
+.weather-details {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.weather-details[hidden],
+.weather-icon[hidden] {
+  display: none;
+}
+
+.weather-icon {
+  width: 64px;
+  height: 64px;
+}
+
+.weather-temperature p,
+.weather-facts dd {
+  margin: 0;
+  font-weight: 700;
+}
+
+.weather-temperature > p:first-child {
+  font-size: 1.5rem;
+  white-space: nowrap;
+}
+
+.weather-description {
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+  text-transform: capitalize;
+}
+
+.weather-facts {
+  display: flex;
+  gap: 1rem;
+  margin: 0;
+}
+
+.weather-facts dt {
+  color: var(--ink-soft);
+  font-size: 0.72rem;
+}
+
+.weather-facts dd {
+  font-size: 0.84rem;
+}
+
 .text-link {
   padding-bottom: 0.4rem;
   border-bottom: 1px solid var(--gold);
@@ -859,6 +941,23 @@ a {
   .section-block {
     padding-top: 3.4rem;
     padding-bottom: 3.4rem;
+  }
+
+  .weather-card {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.9rem;
+    padding: 1.1rem;
+  }
+
+  .weather-details {
+    flex-wrap: wrap;
+    gap: 0.55rem 0.8rem;
+  }
+
+  .weather-facts {
+    flex-wrap: wrap;
+    gap: 0.45rem 0.9rem;
   }
 
   .place-image-wrap {

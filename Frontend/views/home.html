@@ -13,6 +13,31 @@
   <div class="hero-bottom"><span>43°51' N</span><span>Sarajevo, Bosnia &amp; Herzegovina</span></div>
 </section>
 
+<section class="container py-4" aria-label="Current weather">
+  <div id="weatherWidget" class="weather-card" aria-labelledby="weatherHeading">
+    <div class="weather-card-heading">
+      <p class="eyebrow">Right now</p>
+      <h2 id="weatherHeading">Sarajevo weather</h2>
+      <p id="weatherLocation" class="weather-location">Sarajevo</p>
+    </div>
+    <div class="weather-card-content">
+      <p id="weatherStatus" class="weather-status" role="status">Loading weather…</p>
+      <div id="weatherDetails" class="weather-details" hidden>
+        <img id="weatherIcon" class="weather-icon" alt="" hidden />
+        <div class="weather-temperature">
+          <p id="weatherTemperature"></p>
+          <p id="weatherDescription" class="weather-description"></p>
+        </div>
+        <dl class="weather-facts">
+          <div><dt>Feels like</dt><dd id="weatherFeelsLike"></dd></div>
+          <div><dt>Humidity</dt><dd id="weatherHumidity"></dd></div>
+          <div><dt>Wind</dt><dd id="weatherWind"></dd></div>
+        </dl>
+      </div>
+    </div>
+  </div>
+</section>
+
 <section class="section-block container py-5 py-lg-6">
   <div class="section-heading d-flex flex-wrap justify-content-between align-items-end gap-3">
     <div><p class="eyebrow">The local favorites</p><h2>Most Popular in Sarajevo</h2><p class="section-subtitle">Places that make the city feel like yours.</p></div>

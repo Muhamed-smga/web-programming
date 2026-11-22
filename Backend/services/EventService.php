@@ -3,14 +3,17 @@
 namespace Sarajevo2B\Backend\Services;
 
 use Sarajevo2B\Backend\DAO\EventDAO;
+use Sarajevo2B\Backend\DAO\PlaceDAO;
 
 final class EventService
 {
     private EventDAO $dao;
+    private PlaceDAO $placeDAO;
 
-    public function __construct(EventDAO $dao)
+    public function __construct(EventDAO $dao, PlaceDAO $placeDAO)
     {
         $this->dao = $dao;
+        $this->placeDAO = $placeDAO;
     }
 
     public function getAll(): array
@@ -28,7 +31,10 @@ final class EventService
         Input::only($data, ['place_id', 'title', 'description', 'event_date', 'start_time', 'end_time', 'image_url']);
         Input::requireKeys($data, ['title', 'event_date']);
 
-        return $this->dao->create($this->validate($data));
+        $validated = $this->validate($data);
+        $this->validatePlace($validated);
+
+        return $this->dao->create($validated);
     }
 
     public function update(int $id, array $data, bool $replace = false): array
@@ -40,11 +46,18 @@ final class EventService
             ]);
         }
         if ($data === []) {
-            throw new ApiException('At least one field is required.', 422);
+            throw new ApiException('At least one field is required.', 400);
         }
 
-        return $this->dao->update($id, $this->validate($data))
-            ?? throw new ApiException('Event not found.', 404);
+        $existing = $this->dao->getById($id) ?? throw new ApiException('Event not found.', 404);
+        $changes = $this->validate($data);
+        $this->validatePlace($changes);
+        $this->validateTimeRange(
+            array_key_exists('start_time', $changes) ? $changes['start_time'] : $existing['start_time'],
+            array_key_exists('end_time', $changes) ? $changes['end_time'] : $existing['end_time']
+        );
+
+        return $this->dao->update($id, $changes) ?? throw new ApiException('Event not found.', 404);
     }
 
     public function delete(int $id): void
@@ -78,6 +91,27 @@ final class EventService
             $validated['image_url'] = Input::string($data, 'image_url', 500);
         }
 
+        $this->validateTimeRange(
+            $validated['start_time'] ?? null,
+            $validated['end_time'] ?? null
+        );
+
         return $validated;
+    }
+
+    private function validatePlace(array $data): void
+    {
+        if (array_key_exists('place_id', $data)
+            && $data['place_id'] !== null
+            && $this->placeDAO->getById($data['place_id']) === null) {
+            throw new ApiException('Place not found.', 400);
+        }
+    }
+
+    private function validateTimeRange(?string $startTime, ?string $endTime): void
+    {
+        if ($startTime !== null && $endTime !== null && $endTime <= $startTime) {
+            throw new ApiException('The event end_time must be after start_time.', 400);
+        }
     }
 }

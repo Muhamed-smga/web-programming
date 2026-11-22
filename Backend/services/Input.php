@@ -7,7 +7,7 @@ final class Input
     public static function only(array $data, array $allowed): array
     {
         if (array_diff(array_keys($data), $allowed) !== []) {
-            throw new ApiException('One or more fields are not allowed.', 422);
+            throw new ApiException('One or more fields are not allowed.', 400);
         }
 
         return $data;
@@ -17,7 +17,7 @@ final class Input
     {
         foreach ($required as $key) {
             if (!array_key_exists($key, $data)) {
-                throw new ApiException(sprintf('The %s field is required.', $key), 422);
+                throw new ApiException(sprintf('The %s field is required.', $key), 400);
             }
         }
     }
@@ -26,7 +26,7 @@ final class Input
     {
         if (!array_key_exists($key, $data)) {
             if ($required) {
-                throw new ApiException(sprintf('The %s field is required.', $key), 422);
+                throw new ApiException(sprintf('The %s field is required.', $key), 400);
             }
             return null;
         }
@@ -36,12 +36,12 @@ final class Input
             return null;
         }
         if (!is_string($value)) {
-            throw new ApiException(sprintf('The %s field must be a string.', $key), 422);
+            throw new ApiException(sprintf('The %s field must be a string.', $key), 400);
         }
 
         $value = trim($value);
         if (($required && $value === '') || mb_strlen($value) > $maxLength) {
-            throw new ApiException(sprintf('The %s field is invalid.', $key), 422);
+            throw new ApiException(sprintf('The %s field is invalid.', $key), 400);
         }
 
         return $value;
@@ -51,14 +51,14 @@ final class Input
     {
         if (!array_key_exists($key, $data)) {
             if ($required) {
-                throw new ApiException(sprintf('The %s field is required.', $key), 422);
+                throw new ApiException(sprintf('The %s field is required.', $key), 400);
             }
             return null;
         }
 
         $value = $data[$key];
         if (!is_int($value) || $value < 1) {
-            throw new ApiException(sprintf('The %s field must be a positive integer.', $key), 422);
+            throw new ApiException(sprintf('The %s field must be a positive integer.', $key), 400);
         }
 
         return $value;
@@ -84,12 +84,12 @@ final class Input
             return null;
         }
         if ((!is_int($value) && !is_float($value)) || !is_finite((float) $value)) {
-            throw new ApiException(sprintf('The %s field must be a number or null.', $key), 422);
+            throw new ApiException(sprintf('The %s field must be a number or null.', $key), 400);
         }
 
         $value = (float) $value;
         if ($value < $minimum || $value > $maximum) {
-            throw new ApiException(sprintf('The %s field is out of range.', $key), 422);
+            throw new ApiException(sprintf('The %s field is out of range.', $key), 400);
         }
 
         return $value;
@@ -104,7 +104,7 @@ final class Input
 
         $parts = explode('-', $value);
         if (count($parts) !== 3 || !checkdate((int) $parts[1], (int) $parts[2], (int) $parts[0])) {
-            throw new ApiException(sprintf('The %s field must be a valid YYYY-MM-DD date.', $key), 422);
+            throw new ApiException(sprintf('The %s field must be a valid YYYY-MM-DD date.', $key), 400);
         }
 
         return $value;
@@ -117,7 +117,7 @@ final class Input
             return null;
         }
         if (!preg_match('/^(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/', $value)) {
-            throw new ApiException(sprintf('The %s field must be a valid time.', $key), 422);
+            throw new ApiException(sprintf('The %s field must be a valid time.', $key), 400);
         }
 
         return strlen($value) === 5 ? $value . ':00' : $value;
@@ -127,7 +127,7 @@ final class Input
     {
         $value = self::positiveInt($data, $key, $required);
         if ($value !== null && ($value < 1 || $value > 5)) {
-            throw new ApiException('The rating must be an integer from 1 through 5.', 422);
+            throw new ApiException('The rating must be an integer from 1 through 5.', 400);
         }
 
         return $value;

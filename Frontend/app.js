@@ -1,5 +1,6 @@
 import { events, places } from './mock-data.js';
 
+const API_BASE_URL = 'http://127.0.0.1:8000/api';
 const app = document.getElementById('app');
 const notice = document.getElementById('appNotice');
 const viewCache = new Map();
@@ -8,6 +9,30 @@ const categories = ['Coffee Bars', 'Sweet Shops', 'Clubs', 'Bars'];
 let activeEventTimer;
 let activePlaceCategory = 'All Places';
 let favorites = loadFavorites();
+
+async function fetchJson(path) {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 10000);
+  try {
+    const response = await fetch(`${API_BASE_URL}${path}`, { signal: controller.signal });
+    let payload;
+    try {
+      payload = await response.json();
+    } catch {
+      throw new Error('The server returned an invalid response.');
+    }
+    if (!response.ok) {
+      throw new Error(typeof payload.error === 'string' ? payload.error : `Request failed (${response.status}).`);
+    }
+    return payload;
+  } catch (error) {
+    if (error.name === 'AbortError') throw new Error('The request took too long. Please try again.');
+    if (error instanceof TypeError) throw new Error('Unable to connect to the weather service. Please try again later.');
+    throw error;
+  } finally {
+    window.clearTimeout(timeout);
+  }
+}
 
 function loadFavorites() {
   try {
@@ -169,6 +194,49 @@ function renderHome() {
     categoryCard('Bars', 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&w=700&q=80', 'Find your evening spot'),
     categoryCard('Events', 'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?auto=format&fit=crop&w=700&q=80', 'See what is on')
   ].join('');
+  loadWeather();
+}
+
+async function loadWeather() {
+  const location = document.getElementById('weatherLocation');
+  if (!location) return;
+
+  const status = document.getElementById('weatherStatus');
+  const details = document.getElementById('weatherDetails');
+  const icon = document.getElementById('weatherIcon');
+  status.textContent = 'Loading weather…';
+
+  try {
+    const response = await fetchJson('/external/weather');
+    const weather = response.data;
+    if (!weather || typeof weather !== 'object') throw new Error('The server returned incomplete weather data.');
+
+    location.textContent = String(weather.location || 'Sarajevo');
+    document.getElementById('weatherTemperature').textContent = formatWeatherValue(weather.temperature, '°C');
+    document.getElementById('weatherFeelsLike').textContent = formatWeatherValue(weather.feels_like, '°C');
+    document.getElementById('weatherDescription').textContent = String(weather.description || 'Conditions unavailable');
+    document.getElementById('weatherHumidity').textContent = formatWeatherValue(weather.humidity, '%');
+    document.getElementById('weatherWind').textContent = formatWeatherValue(weather.wind_speed, 'm/s');
+
+    if (typeof weather.icon === 'string' && /^[0-9]{2}[dn]$/.test(weather.icon)) {
+      icon.src = `https://openweathermap.org/img/wn/${weather.icon}@2x.png`;
+      icon.alt = String(weather.description || 'Weather');
+      icon.hidden = false;
+    } else {
+      icon.hidden = true;
+    }
+    details.hidden = false;
+    status.hidden = true;
+  } catch (error) {
+    console.warn('Weather is currently unavailable.', error);
+    status.textContent = 'Weather is currently unavailable.';
+  }
+}
+
+function formatWeatherValue(value, unit) {
+  if (value === null || value === undefined || value === '') return '—';
+  const number = Number(value);
+  return Number.isFinite(number) ? `${number.toFixed(1)} ${unit}` : '—';
 }
 
 function renderPlaces(categorySlug = '') {

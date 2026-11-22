@@ -3,14 +3,17 @@
 namespace Sarajevo2B\Backend\Services;
 
 use Sarajevo2B\Backend\DAO\ReviewDAO;
+use Sarajevo2B\Backend\DAO\PlaceDAO;
 
 final class ReviewService
 {
     private ReviewDAO $dao;
+    private PlaceDAO $placeDAO;
 
-    public function __construct(ReviewDAO $dao)
+    public function __construct(ReviewDAO $dao, PlaceDAO $placeDAO)
     {
         $this->dao = $dao;
+        $this->placeDAO = $placeDAO;
     }
 
     public function getAll(): array
@@ -28,16 +31,31 @@ final class ReviewService
         Input::only($data, ['place_id', 'rating', 'comment']);
         Input::requireKeys($data, ['place_id', 'rating']);
         $validated = $this->validate($data);
+        if ($this->placeDAO->getById($validated['place_id']) === null) {
+            throw new ApiException('Place not found.', 400);
+        }
+        if ($this->dao->existsForUserAndPlace($userId, $validated['place_id'])) {
+            throw new ApiException('You have already reviewed this place.', 400);
+        }
         $validated['user_id'] = $userId;
 
-        return $this->dao->create($validated);
+        try {
+            return $this->dao->create($validated);
+        } catch (\PDOException $exception) {
+            $driverCode = (int) ($exception->errorInfo[1] ?? 0);
+            if ((string) $exception->getCode() === '23000' && $driverCode === 1062) {
+                throw new ApiException('You have already reviewed this place.', 400);
+            }
+
+            throw $exception;
+        }
     }
 
     public function update(int $id, array $data): array
     {
         Input::only($data, ['rating', 'comment']);
         if ($data === []) {
-            throw new ApiException('At least one field is required.', 422);
+            throw new ApiException('At least one field is required.', 400);
         }
         $validated = $this->validate($data);
 

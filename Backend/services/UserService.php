@@ -40,7 +40,7 @@ final class UserService
         return $this->withoutPasswordHash($user);
     }
 
-    public function update(int $id, array $data, bool $isAdmin, bool $replace = false): array
+    public function update(int $id, array $data, bool $isAdmin, int $actorId, bool $replace = false): array
     {
         $fields = $isAdmin ? ['name', 'email', 'password', 'role'] : ['name', 'email', 'password'];
         Input::only($data, $fields);
@@ -51,16 +51,27 @@ final class UserService
             }
         }
         if ($data === []) {
-            throw new ApiException('At least one field is required.', 422);
+            throw new ApiException('At least one field is required.', 400);
+        }
+        if ($id === $actorId && array_key_exists('role', $data)) {
+            throw new ApiException('You cannot change your own role.', 400);
         }
 
         $changes = $this->validateUserFields($data, $isAdmin);
+        if (array_key_exists('email', $changes)) {
+            $this->ensureEmailAvailable($changes['email'], $id);
+        }
         if (array_key_exists('password', $data)) {
             $changes['password_hash'] = $this->hashPassword($data['password']);
             unset($changes['password']);
         }
 
-        $user = $this->dao->update($id, $changes);
+        try {
+            $user = $this->dao->update($id, $changes);
+        } catch (\PDOException $exception) {
+            $this->throwIfDuplicateEmail($exception);
+            throw $exception;
+        }
         if ($user === null) {
             throw new ApiException('User not found.', 404);
         }
@@ -70,6 +81,13 @@ final class UserService
 
     public function delete(int $id): void
     {
+        $user = $this->dao->getById($id);
+        if ($user === null) {
+            throw new ApiException('User not found.', 404);
+        }
+        if ($user['role'] === 'admin' && $this->dao->countAdmins() <= 1) {
+            throw new ApiException('The last administrator cannot be deleted.', 400);
+        }
         if (!$this->dao->delete($id)) {
             throw new ApiException('User not found.', 404);
         }
@@ -79,11 +97,17 @@ final class UserService
     {
         Input::requireKeys($data, ['name', 'email', 'password']);
         $fields = $this->validateUserFields($data, $allowRole);
+        $this->ensureEmailAvailable($fields['email']);
         $fields['password_hash'] = $this->hashPassword($data['password']);
         $fields['role'] = $allowRole && array_key_exists('role', $data) ? $fields['role'] : 'user';
         unset($fields['password']);
 
-        return $this->withoutPasswordHash($this->dao->create($fields));
+        try {
+            return $this->withoutPasswordHash($this->dao->create($fields));
+        } catch (\PDOException $exception) {
+            $this->throwIfDuplicateEmail($exception);
+            throw $exception;
+        }
     }
 
     private function validateUserFields(array $data, bool $allowRole): array
@@ -95,20 +119,20 @@ final class UserService
         if (array_key_exists('email', $data)) {
             $email = Input::string($data, 'email', 150, true);
             if (filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
-                throw new ApiException('The email address is invalid.', 422);
+                throw new ApiException('The email address is invalid.', 400);
             }
             $fields['email'] = strtolower($email);
         }
         if (array_key_exists('password', $data)) {
             $password = $data['password'];
             if (!is_string($password) || strlen($password) < 8 || strlen($password) > 255) {
-                throw new ApiException('The password must contain between 8 and 255 characters.', 422);
+                throw new ApiException('The password must contain between 8 and 255 characters.', 400);
             }
             $fields['password'] = $password;
         }
         if (array_key_exists('role', $data)) {
             if (!$allowRole || !in_array($data['role'], ['admin', 'user'], true)) {
-                throw new ApiException('The role is invalid.', 422);
+                throw new ApiException('The role is invalid.', 400);
             }
             $fields['role'] = $data['role'];
         }
@@ -124,6 +148,22 @@ final class UserService
         }
 
         return $hash;
+    }
+
+    private function ensureEmailAvailable(string $email, ?int $exceptUserId = null): void
+    {
+        $existingUser = $this->dao->getByEmail($email);
+        if ($existingUser !== null && (int) $existingUser['id'] !== $exceptUserId) {
+            throw new ApiException('Email is already registered.', 400);
+        }
+    }
+
+    private function throwIfDuplicateEmail(\PDOException $exception): void
+    {
+        $driverCode = (int) ($exception->errorInfo[1] ?? 0);
+        if ((string) $exception->getCode() === '23000' && $driverCode === 1062) {
+            throw new ApiException('Email is already registered.', 400);
+        }
     }
 
     private function withoutPasswordHash(array $user): array
