@@ -21,4 +21,14 @@ final class UserDAO extends BaseDAO
 
         return $user === false ? null : $user;
     }
+
+    public function countAdmins(): int
+    {
+        $statement = $this->execute(
+            'SELECT COUNT(*) FROM `users` WHERE `role` = :role',
+            ['role' => 'admin']
+        );
+
+        return (int) $statement->fetchColumn();
+    }
 }

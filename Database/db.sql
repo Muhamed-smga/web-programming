@@ -97,8 +97,8 @@ CREATE TABLE reviews (
 
 INSERT INTO users (name, email, password_hash, role)
 VALUES
-('Admin', 'admin@sarajevo2b.com', 'REPLACE_WITH_PASSWORD_HASH', 'admin'),
-('Muhamed', 'user@sarajevo2b.com', 'REPLACE_WITH_PASSWORD_HASH', 'user');
+('Admin', 'admin@sarajevo2b.com', '$2y$10$bcnjxryyBk6aKaSiUBKMDuojy/aiLUSMk4rUjn3hI2LqJhXzM4CoC', 'admin'),
+('Muhamed', 'user@sarajevo2b.com', '$2y$10$TGzArlGxd5Bfqjmsv7qh0erxhzOI53ulXhaucE6lzT8hj59MsJXSi', 'user');
 
 -- CATEGORIES
 

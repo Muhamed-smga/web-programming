@@ -10,4 +10,14 @@ final class CategoryDAO extends BaseDAO
     {
         parent::__construct($pdo, 'categories', ['name', 'description']);
     }
+
+    public function hasPlaces(int $categoryId): bool
+    {
+        $statement = $this->execute(
+            'SELECT 1 FROM `places` WHERE `category_id` = :category_id LIMIT 1',
+            ['category_id' => $categoryId]
+        );
+
+        return $statement->fetchColumn() !== false;
+    }
 }

@@ -39,7 +39,7 @@ final class CategoryService
             Input::requireKeys($data, ['name', 'description']);
         }
         if ($data === []) {
-            throw new ApiException('At least one field is required.', 422);
+            throw new ApiException('At least one field is required.', 400);
         }
 
         $changes = [];
@@ -55,6 +55,9 @@ final class CategoryService
 
     public function delete(int $id): void
     {
+        if ($this->dao->hasPlaces($id)) {
+            throw new ApiException('This category cannot be deleted while places use it.', 400);
+        }
         if (!$this->dao->delete($id)) {
             throw new ApiException('Category not found.', 404);
         }

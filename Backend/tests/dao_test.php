@@ -94,8 +94,8 @@ $reviews = new ReviewDAO($pdo);
 $userService = new UserService($users);
 $categoryService = new CategoryService($categories);
 $placeService = new PlaceService($places);
-$eventService = new EventService($events);
-$reviewService = new ReviewService($reviews);
+$eventService = new EventService($events, $places);
+$reviewService = new ReviewService($reviews, $places);
 
 $user = $userService->register([
     'name' => 'DAO Test User',
@@ -113,8 +113,9 @@ try {
         'email' => $user['email'],
         'password' => 'AnotherPassword123',
     ]);
-} catch (PDOException $exception) {
-    $duplicateEmailRejected = (string) $exception->getCode() === '23000';
+} catch (\Sarajevo2B\Backend\Services\ApiException $exception) {
+    $duplicateEmailRejected = $exception->getStatus() === 400
+        && $exception->getMessage() === 'Email is already registered.';
 }
 assertTrue($duplicateEmailRejected, 'Duplicate email was accepted.');
 $roleMassAssignmentRejected = false;
@@ -126,13 +127,13 @@ try {
         'role' => 'admin',
     ]);
 } catch (\Sarajevo2B\Backend\Services\ApiException $exception) {
-    $roleMassAssignmentRejected = $exception->getStatus() === 422;
+    $roleMassAssignmentRejected = $exception->getStatus() === 400;
 }
 assertTrue($roleMassAssignmentRejected, 'Public registration accepted a role field.');
 $user = $users->update($userId, ['name' => 'Updated Test User']);
 assertTrue($user['name'] === 'Updated Test User', 'User update failed.');
 assertTrue(count($users->getAll()) === 1 && $users->getById($userId) !== null, 'User retrieval failed.');
-$updatedProfile = $userService->update($userId, ['password' => 'ChangedPassword123'], false);
+$updatedProfile = $userService->update($userId, ['password' => 'ChangedPassword123'], false, $userId);
 $storedUser = $users->getByEmail($user['email']);
 assertTrue(
     !array_key_exists('password_hash', $updatedProfile)
@@ -153,6 +154,20 @@ try {
 assertTrue($invalidTokenRejected, 'Invalid JWT was accepted.');
 $users->update($userId, ['role' => 'admin']);
 assertTrue($authService->authenticate($login['token'])['role'] === 'admin', 'JWT authentication trusted a stale token role.');
+$ownRoleChangeRejected = false;
+try {
+    $userService->update($userId, ['role' => 'user'], true, $userId);
+} catch (\Sarajevo2B\Backend\Services\ApiException $exception) {
+    $ownRoleChangeRejected = $exception->getStatus() === 400;
+}
+assertTrue($ownRoleChangeRejected, 'An administrator was allowed to change their own role.');
+$lastAdminDeletionRejected = false;
+try {
+    $userService->delete($userId);
+} catch (\Sarajevo2B\Backend\Services\ApiException $exception) {
+    $lastAdminDeletionRejected = $exception->getStatus() === 400;
+}
+assertTrue($lastAdminDeletionRejected, 'The last administrator was allowed to be deleted.');
 $users->update($userId, ['role' => 'user']);
 
 $category = $categoryService->create(['name' => "'; SELECT 1; --", 'description' => 'Prepared value']);
@@ -170,6 +185,13 @@ $place = $placeService->create([
     'longitude' => 18.4131,
 ]);
 $placeId = (int) $place['id'];
+$categoryDeletionRejected = false;
+try {
+    $categoryService->delete($categoryId);
+} catch (\Sarajevo2B\Backend\Services\ApiException $exception) {
+    $categoryDeletionRejected = $exception->getStatus() === 400;
+}
+assertTrue($categoryDeletionRejected, 'A category used by a place was deleted.');
 $place = $placeService->update($placeId, ['phone' => '+387000000']);
 assertTrue($place['phone'] === '+387000000', 'Place partial update failed.');
 assertTrue(count($placeService->getAll()) === 1 && $placeService->getById($placeId)['id'] == $placeId, 'Place retrieval failed.');
@@ -178,8 +200,31 @@ $event = $eventService->create([
     'place_id' => $placeId,
     'title' => 'DAO Test Event',
     'event_date' => '2027-05-15',
+    'start_time' => '18:00',
+    'end_time' => '19:00',
 ]);
 $eventId = (int) $event['id'];
+$eventTimeOrderRejected = false;
+try {
+    $eventService->update($eventId, ['start_time' => '20:00', 'end_time' => '19:00']);
+} catch (\Sarajevo2B\Backend\Services\ApiException $exception) {
+    $eventTimeOrderRejected = $exception->getStatus() === 400;
+}
+assertTrue($eventTimeOrderRejected, 'An event ending before it starts was accepted.');
+$partialEventTimeOrderRejected = false;
+try {
+    $eventService->update($eventId, ['start_time' => '20:00']);
+} catch (\Sarajevo2B\Backend\Services\ApiException $exception) {
+    $partialEventTimeOrderRejected = $exception->getStatus() === 400;
+}
+assertTrue($partialEventTimeOrderRejected, 'A partial event update violated the existing end_time.');
+$missingEventPlaceRejected = false;
+try {
+    $eventService->update($eventId, ['place_id' => 99999]);
+} catch (\Sarajevo2B\Backend\Services\ApiException $exception) {
+    $missingEventPlaceRejected = $exception->getStatus() === 400;
+}
+assertTrue($missingEventPlaceRejected, 'An event accepted a missing place reference.');
 $event = $eventService->update($eventId, ['title' => 'Updated Test Event']);
 assertTrue($event['title'] === 'Updated Test Event', 'Event partial update failed.');
 assertTrue(count($eventService->getAll()) === 1 && $eventService->getById($eventId) !== [], 'Event retrieval failed.');
@@ -188,6 +233,20 @@ assertTrue($event['place_id'] === null, 'Nullable event place reference was not 
 
 $review = $reviewService->create($userId, ['place_id' => $placeId, 'rating' => 5, 'comment' => 'Good']);
 $reviewId = (int) $review['id'];
+$duplicateReviewRejected = false;
+try {
+    $reviewService->create($userId, ['place_id' => $placeId, 'rating' => 3]);
+} catch (\Sarajevo2B\Backend\Services\ApiException $exception) {
+    $duplicateReviewRejected = $exception->getStatus() === 400;
+}
+assertTrue($duplicateReviewRejected, 'A user was allowed to review the same place twice.');
+$missingReviewPlaceRejected = false;
+try {
+    $reviewService->create($userId, ['place_id' => 99999, 'rating' => 3]);
+} catch (\Sarajevo2B\Backend\Services\ApiException $exception) {
+    $missingReviewPlaceRejected = $exception->getStatus() === 400;
+}
+assertTrue($missingReviewPlaceRejected, 'A review accepted a missing place reference.');
 $review = $reviewService->update($reviewId, ['rating' => 4]);
 assertTrue((int) $review['rating'] === 4, 'Review partial update failed.');
 assertTrue(count($reviewService->getAll()) === 1 && $reviewService->getById($reviewId) !== [], 'Review retrieval failed.');
@@ -196,7 +255,7 @@ $invalidRatingRejected = false;
 try {
     $reviewService->update($reviewId, ['rating' => 6]);
 } catch (\Sarajevo2B\Backend\Services\ApiException $exception) {
-    $invalidRatingRejected = $exception->getStatus() === 422;
+    $invalidRatingRejected = $exception->getStatus() === 400;
 }
 assertTrue($invalidRatingRejected, 'Out-of-range review rating was accepted.');
 

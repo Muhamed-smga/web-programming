@@ -47,7 +47,7 @@ final class PlaceService
             ]);
         }
         if ($data === []) {
-            throw new ApiException('At least one field is required.', 422);
+            throw new ApiException('At least one field is required.', 400);
         }
 
         return $this->dao->update($id, $this->validate($data))
